@@ -112,12 +112,12 @@ public class RetrofitUtils {
 //            获得上传方法的参数类型   和参数
             Class[] paramClasses = new Class[params.length + 1];
             Object[] uploadParams = new Object[params.length + 1];
+            paramClasses[params.length] = MultipartBody.Part.class;
+            uploadParams[params.length] = filePart;
             for (int i = 0; i < params.length; i++) {
                 paramClasses[i] = params[i].getClass();
                 uploadParams[i] = params[i];
             }
-            paramClasses[params.length] = MultipartBody.Part.class;
-            uploadParams[params.length] = filePart;
 
 //            获得上传方法
             Method uploadMethod = uploadServiceClass.getMethod(uploadFucntionName, paramClasses);
@@ -171,12 +171,12 @@ public class RetrofitUtils {
 //            获得上传方法的参数类型   和参数
             Class[] paramClasses = new Class[params.length + 1];
             Object[] uploadParams = new Object[params.length + 1];
+            paramClasses[params.length] = ArrayList.class;
+            uploadParams[params.length] = fileParts;
             for (int i = 0; i < params.length; i++) {
                 paramClasses[i] = params[i].getClass();
                 uploadParams[i] = params[i];
             }
-            paramClasses[params.length] = ArrayList.class;
-            uploadParams[params.length] = fileParts;
 
 //            获得上传方法
             Method uploadMethod = uploadsServiceClass.getMethod(uploadFucntionName, paramClasses);
