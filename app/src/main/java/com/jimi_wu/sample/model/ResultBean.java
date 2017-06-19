@@ -38,8 +38,6 @@ public class ResultBean<T> implements BaseModel<T> {
         this.data = data;
     }
 
-
-
     @Override
     public boolean isError() {
         return code != 200;

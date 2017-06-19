@@ -8,7 +8,7 @@ import org.reactivestreams.Subscription;
  * Created by wuzhiming on 2016/11/14.
  */
 
-public abstract class LoadingSubscriber<T> extends WZMSubscriber<T> {
+public abstract class LoadingSubscriber<T> extends EasySubscriber<T> {
 
     public LoadingSubscriber(Context mContext) {
         super(mContext);

@@ -125,10 +125,10 @@ public class RetrofitUtils {
 //            运行上传方法
             Object o = uploadMethod.invoke(service, uploadParams);
             if (o instanceof Flowable) {
-                Flowable uploadObservable = (Flowable) o;
+                Flowable uploadFlowable = (Flowable) o;
 
 //              合并Observable
-                return Flowable.merge(progressObservale, uploadObservable)
+                return Flowable.merge(progressObservale, uploadFlowable)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
             }
@@ -184,10 +184,10 @@ public class RetrofitUtils {
 //            运行上传方法
             Object o = uploadMethod.invoke(service, uploadParams);
             if (o instanceof Flowable) {
-                Flowable uploadObservable = (Flowable) o;
+                Flowable uploadFlowable = (Flowable) o;
 
 //              合并Observable
-                return Flowable.merge(progressObservale, uploadObservable)
+                return Flowable.merge(progressObservale, uploadFlowable)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread());
             }

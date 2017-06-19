@@ -6,7 +6,7 @@ version = "1.0.0"
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.0"
-    resourcePrefix "first commit"
+    resourcePrefix "init"
 
     defaultConfig {
         minSdkVersion 15

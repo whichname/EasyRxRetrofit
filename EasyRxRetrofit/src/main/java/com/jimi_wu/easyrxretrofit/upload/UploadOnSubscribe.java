@@ -12,18 +12,22 @@ import io.reactivex.annotations.NonNull;
 public class UploadOnSubscribe implements FlowableOnSubscribe<Integer> {
 
     private FlowableEmitter<Integer> mObservableEmitter;
-    private long sumLength = 0l;
+    private long mSumLength = 0l;
     private long uploaded = 0l;
 
     private int mPercent = 0;
 
     public UploadOnSubscribe(long sumLength) {
-        this.sumLength = sumLength;
+        this.mSumLength = sumLength;
     }
 
     public void onRead(long read) {
         uploaded+=read;
-        onProgress((int) (100*uploaded/sumLength));
+        if(mSumLength <= 0) {
+            onProgress(-1);
+        } else {
+            onProgress((int) (100*uploaded/ mSumLength));
+        }
     }
 
     private void onProgress(int percent) {

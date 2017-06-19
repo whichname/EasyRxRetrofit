@@ -13,10 +13,10 @@ import org.reactivestreams.Subscription;
  * Created by wuzhiming on 2016/11/14.
  */
 
-public abstract class WZMSubscriber<T> implements Subscriber<T> {
+public abstract class EasySubscriber<T> implements Subscriber<T> {
     protected Context mContext;
 
-    public WZMSubscriber(Context context) {
+    public EasySubscriber(Context context) {
         this.mContext = context;
     }
 

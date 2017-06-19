@@ -20,5 +20,4 @@ public interface FileUploadService {
     @POST(Constants.UPLOAD_URL)
     Flowable<ResultBean<FileBean>> upload(@Part MultipartBody.Part file);
 
-
 }

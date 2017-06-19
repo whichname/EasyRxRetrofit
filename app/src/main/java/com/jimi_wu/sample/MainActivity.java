@@ -11,15 +11,20 @@ import android.widget.TextView;
 import com.jimi_wu.easyrxretrofit.RetrofitUtils;
 import com.jimi_wu.easyrxretrofit.subscriber.DownLoadSubscriber;
 import com.jimi_wu.easyrxretrofit.subscriber.UploadSubscriber;
-import com.jimi_wu.easyrxretrofit.subscriber.WZMSubscriber;
+import com.jimi_wu.easyrxretrofit.subscriber.EasySubscriber;
 import com.jimi_wu.sample.apiservice.FileUploadService;
 import com.jimi_wu.sample.apiservice.FilesUploadService;
 import com.jimi_wu.sample.apiservice.GetUserService;
 import com.jimi_wu.sample.model.FileBean;
 import com.jimi_wu.sample.model.UserBean;
 
+import org.reactivestreams.Publisher;
+
 import java.io.File;
 import java.util.ArrayList;
+
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Function;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -47,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         .createService(GetUserService.class)
                         .start()
                         .compose(RetrofitUtils.<UserBean>handleResult())
-                        .subscribe(new WZMSubscriber<UserBean>(this) {
+                        .subscribe(new EasySubscriber<UserBean>(this) {
 
                             @Override
                             protected void _onNext(UserBean userBean) {

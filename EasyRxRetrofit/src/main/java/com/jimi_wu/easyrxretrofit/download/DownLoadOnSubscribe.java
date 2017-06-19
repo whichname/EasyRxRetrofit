@@ -58,6 +58,7 @@ public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
 
     private void init(ResponseBody responseBody) throws IOException {
         mSumLength = responseBody.contentLength();
+
         mSource = responseBody.source();
 
         mProgressSource = getProgressSource(mSource);
@@ -68,7 +69,11 @@ public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
 
     public void onRead(long read) {
         mUploaded += read == -1 ? 0 : read;
-        onProgress((int) (100 * mUploaded / mSumLength));
+        if(mSumLength <= 0) {
+            onProgress(-1);
+        } else {
+            onProgress((int) (100 * mUploaded / mSumLength));
+        }
     }
 
     private void onProgress(int percent) {

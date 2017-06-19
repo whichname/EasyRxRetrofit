@@ -20,7 +20,6 @@ public class SampleApplication extends Application {
                 .setBaseUrl(Constants.BASE_URL)   //设置baseUrl
                 .setAgent("agent")  //设置agent
                 .init(this);
-
     }
 
 
