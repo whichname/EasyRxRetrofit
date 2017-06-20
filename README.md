@@ -140,6 +140,17 @@ RetrofitUtils
     });
 ```
 
+结果如下：
+```
+06-20 10:39:58.974 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>95
+06-20 10:39:58.975 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>96
+06-20 10:39:58.978 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>97
+06-20 10:39:58.981 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>98
+06-20 10:39:58.993 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>99
+06-20 10:39:58.994 32377-32377/com.jimi_wu.sample I/retrofit: onProgress======>100
+06-20 10:39:59.020 32377-32377/com.jimi_wu.sample I/retrofit: onNext=======>url:http://192.168.5.127:3000/uploads/wx_camera_1497773556658.mp4
+```
+
 ### 上传多个文件，监听上传进度
 多文件上传与单文件上传是类似的，只是ApiService稍有不同：
 ```java
@@ -185,6 +196,19 @@ RetrofitUtils
     });
 ```
 
+结果如下：
+```
+06-20 10:52:49.095 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>95
+06-20 10:52:49.095 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>96
+06-20 10:52:49.116 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>97
+06-20 10:52:49.117 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>98
+06-20 10:52:49.118 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>99
+06-20 10:52:49.118 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>100
+06-20 10:52:49.160 32377-32377/com.jimi_wu.sample I/retrofit: onNext=======>上传成功:http://192.168.5.127:3000/uploads/wx_camera_1497846596539.jpg
+                                                              上传成功:http://192.168.5.127:3000/uploads/wx_camera_1497774775994.jpg
+                                                              上传成功:http://192.168.5.127:3000/uploads/wx_camera_1497774700027.jpg
+```
+
 
 ### 文件下载，监听下载进度
 
@@ -220,5 +244,17 @@ downLoadFile(String url, String savePath, String fileName)
 ```
 来设置下载的保存路径和文件名。
 
+结果如下:
+```
+06-20 10:54:01.590 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>95
+06-20 10:54:01.686 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>96
+06-20 10:54:01.793 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>97
+06-20 10:54:01.884 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>98
+06-20 10:54:01.985 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>99
+06-20 10:54:02.086 32377-32377/com.jimi_wu.sample I/retrofit: onProgress=======>100
+06-20 10:54:02.100 32377-32377/com.jimi_wu.sample I/retrofit: onNext=======>/storage/emulated/0/Download/VID_20170616_122618.mp4
+```
+
+---
 
 博客地址：[http://blog.csdn.net/anyfive/article/details/73469365](http://blog.csdn.net/anyfive/article/details/73469365)
