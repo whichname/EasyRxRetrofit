@@ -1,7 +1,7 @@
 ### 依赖
 
 ```
-compile 'com.jimi_wu:EasyRxRetrofit:2.0.0'
+implementation 'com.jimi_wu:EasyRxRetrofit:2.0.0'
 ```
 
 ### 在你的application中注册

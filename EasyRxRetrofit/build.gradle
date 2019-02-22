@@ -36,6 +36,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
 }
 
+version = "2.0.0"
 def siteUrl = 'https://github.com/whichname/EasyRxRetrofit'      // 项目的主页
 def gitUrl = 'https://github.com/whichname/EasyRxRetrofit.git'   // Git仓库的url
 group = "com.jimi_wu"                                        // Maven Group ID for the artifact，一般填你唯一的包名
