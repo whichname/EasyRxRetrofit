@@ -1,51 +1,49 @@
 package com.jimi_wu.easyrxretrofit.upload;
 
 
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
-import io.reactivex.annotations.NonNull;
+import android.util.Pair;
+
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 
 /**
  * Created by wzm on 2017/6/11.
  */
 
-public class UploadOnSubscribe implements FlowableOnSubscribe<Integer> {
+public class UploadOnSubscribe implements ObservableOnSubscribe<Object> {
 
-    private FlowableEmitter<Integer> mObservableEmitter;
-    private long mSumLength = 0l;
-    private long uploaded = 0l;
+    private ObservableEmitter<Object> mObservableEmitter;
+    private long mSumLength = 0L;
+    private long mUploaded = 0L;
 
-    private int mPercent = 0;
+    public UploadOnSubscribe() {
+    }
 
-    public UploadOnSubscribe(long sumLength) {
+    public void setSumLength(long sumLength) {
         this.mSumLength = sumLength;
     }
 
-    public void onRead(long read) {
-        uploaded+=read;
-        if(mSumLength <= 0) {
-            onProgress(-1);
-        } else {
-            onProgress((int) (100*uploaded/ mSumLength));
-        }
+    public long getSumLength() {
+        return mSumLength;
     }
 
-    private void onProgress(int percent) {
+    public void addSumLength(long length) {
+        this.mSumLength += length;
+    }
+
+    public void onRead(long read) {
+        mUploaded += read;
         if (mObservableEmitter == null) return;
-        if(percent == mPercent) return;
-        mPercent = percent;
-        if (percent >= 100) {
-            percent = 100;
-            mObservableEmitter.onNext(percent);
-            mObservableEmitter.onComplete();
-            return;
+        if (mUploaded >= mSumLength) {
+            mUploaded = mSumLength;
         }
-        mObservableEmitter.onNext(percent);
+        mObservableEmitter.onNext(Pair.create(mUploaded, mSumLength));
     }
 
     @Override
-    public void subscribe(@NonNull FlowableEmitter<Integer> e) throws Exception {
-        this.mObservableEmitter = e;
+    public void subscribe(ObservableEmitter<Object> emitter) throws Exception {
+        mObservableEmitter = emitter;
     }
+
 
 }

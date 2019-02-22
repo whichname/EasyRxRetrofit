@@ -11,7 +11,6 @@ import okio.BufferedSink;
 /**
  * Created by wzm on 2017/6/11.
  */
-
 public class UploadRequestBody extends RequestBody {
 
     private File mFile;
@@ -60,6 +59,5 @@ public class UploadRequestBody extends RequestBody {
         }
 
     }
-
 
 }

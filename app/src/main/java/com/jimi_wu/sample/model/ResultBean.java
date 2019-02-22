@@ -1,6 +1,7 @@
 package com.jimi_wu.sample.model;
 
-import com.jimi_wu.easyrxretrofit.model.BaseModel;
+
+import com.jimi_wu.easyrxretrofit.transformer.BaseModel;
 
 /**
  * Created by wzm on 2017/6/14.
@@ -41,11 +42,6 @@ public class ResultBean<T> implements BaseModel<T> {
     @Override
     public boolean isError() {
         return code != 200;
-    }
-
-    @Override
-    public int getErrorCode() {
-        return code;
     }
 
     @Override

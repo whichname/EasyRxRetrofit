@@ -5,18 +5,19 @@ package com.jimi_wu.easyrxretrofit.exception;
  */
 public class ServerException extends Exception {
 
-    public static final int ERROR_NETWORK = -1;
-    public static final int ERROR_OTHER = -2;
-
-    private int errorCode = ERROR_OTHER;
-
-    public int getErrorCode() {
-        return errorCode;
+    public ServerException() {
     }
 
-    public ServerException(String message, int errorCode) {
+    public ServerException(String message) {
         super(message);
-        this.errorCode = errorCode;
+    }
+
+    public ServerException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ServerException(Throwable cause) {
+        super(cause);
     }
 
 }

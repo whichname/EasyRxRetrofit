@@ -5,7 +5,7 @@ import com.jimi_wu.sample.Constants;
 import com.jimi_wu.sample.model.ResultBean;
 import com.jimi_wu.sample.model.UserBean;
 
-import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import retrofit2.http.POST;
 
 /**
@@ -14,6 +14,6 @@ import retrofit2.http.POST;
 public interface GetUserService {
 
     @POST(Constants.GET_USER_URL)
-    Flowable<ResultBean<UserBean>> start();
+    Observable<ResultBean<UserBean>> start();
 
 }

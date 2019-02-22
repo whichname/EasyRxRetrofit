@@ -1,13 +1,11 @@
-package com.jimi_wu.easyrxretrofit.model;
+package com.jimi_wu.easyrxretrofit.transformer;
 
 /**
- * Created by Administrator on 2016/9/5.
+ * created by wuzhiming on 2019/2/21
  */
 public interface BaseModel<T> {
 
     boolean isError();
-
-    int getErrorCode();
 
     String getMsg();
 

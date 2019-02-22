@@ -12,7 +12,7 @@ import okhttp3.Response;
 
 public class AgentInterceptor implements Interceptor {
     private static final String USER_AGENT_HEADER_NAME = "User-Agent";
-    protected String agent = "wzmretrofit";
+    protected String agent;
 
     public AgentInterceptor(String agent) {
         this.agent = agent;

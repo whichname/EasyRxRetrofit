@@ -8,62 +8,67 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.jimi_wu.easyrxretrofit.RetrofitUtils;
-import com.jimi_wu.easyrxretrofit.subscriber.DownLoadSubscriber;
-import com.jimi_wu.easyrxretrofit.subscriber.UploadSubscriber;
-import com.jimi_wu.easyrxretrofit.subscriber.EasySubscriber;
-import com.jimi_wu.sample.apiservice.FileUploadService;
-import com.jimi_wu.sample.apiservice.FilesUploadService;
+import com.jimi_wu.easyrxretrofit.RetrofitManager;
+import com.jimi_wu.easyrxretrofit.observer.BaseObserver;
+import com.jimi_wu.easyrxretrofit.observer.DownLoadObserver;
+import com.jimi_wu.easyrxretrofit.observer.UploadObserver;
+import com.jimi_wu.easyrxretrofit.upload.UploadParam;
 import com.jimi_wu.sample.apiservice.GetUserService;
 import com.jimi_wu.sample.model.FileBean;
+import com.jimi_wu.sample.model.ResultBean;
 import com.jimi_wu.sample.model.UserBean;
-
-import org.reactivestreams.Publisher;
 
 import java.io.File;
 import java.util.ArrayList;
 
-import io.reactivex.annotations.NonNull;
-import io.reactivex.functions.Function;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private String TAG;
 
     private static int REQUEST_CODE_UPLOAD = 1;
     private static int REQUEST_CODE_UPLOADS = 2;
 
     private TextView tv;
+    private TextView tvActualProgress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        TAG = getClass().getSimpleName();
         setContentView(R.layout.activity_main);
         findViewById(R.id.btn).setOnClickListener(this);
         findViewById(R.id.btn_upload).setOnClickListener(this);
         findViewById(R.id.btn_uploads).setOnClickListener(this);
         findViewById(R.id.btn_download).setOnClickListener(this);
         tv = (TextView) findViewById(R.id.tv);
+        tvActualProgress = (TextView) findViewById(R.id.tv_actual_progress);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn:
-                RetrofitUtils
+                tvActualProgress.setText("");
+                RetrofitManager
                         .createService(GetUserService.class)
                         .start()
-                        .compose(RetrofitUtils.<UserBean>handleResult())
-                        .subscribe(new EasySubscriber<UserBean>(this) {
-
+                        .compose(RetrofitManager.<UserBean>handleResult())
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new BaseObserver<UserBean>() {
                             @Override
                             protected void _onNext(UserBean userBean) {
                                 Log.i("retrofit", "onNext=========>" + userBean.getName());
-                                tv.setText("请求成功:"+userBean.getName());
+                                tv.setText("请求成功:" + userBean.getName());
                             }
 
                             @Override
-                            protected void _onError(int errorCode, String msg) {
-                                Log.i("retrofit", "onError=========>" + msg);
-                                tv.setText("请求失败:"+msg);
+                            protected void _onError(Throwable e) {
+                                Log.i("retrofit", "onError=========>" + e.getMessage());
+                                tv.setText("请求失败:" + e.getMessage());
                             }
                         });
                 break;
@@ -91,20 +96,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            if(requestCode == REQUEST_CODE_UPLOAD) {
+            if (requestCode == REQUEST_CODE_UPLOAD) {
                 Uri uri = data.getData();
                 File file = FileUtils.getFile(this, uri);
                 upload(file);
                 return;
             }
-            if(requestCode == REQUEST_CODE_UPLOADS) {
+            if (requestCode == REQUEST_CODE_UPLOADS) {
                 uris.add(data.getData());
-                if(uris.size() < 3) {
-                    tv.setText("当前选择 "+uris.size()+" 个文件\n请继续选择\n3 个文件时将上传");
+                if (uris.size() < 3) {
+                    tv.setText("当前选择 " + uris.size() + " 个文件\n请继续选择\n3 个文件时将上传");
                     return;
                 }
                 ArrayList<File> files = new ArrayList<>();
-                for (Uri uri: uris) {
+                for (Uri uri : uris) {
                     File file = FileUtils.getFile(this, uri);
                     files.add(file);
                 }
@@ -119,25 +124,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 单图上传
      */
     public void upload(File file) {
-        RetrofitUtils
-                .uploadFile(file, FileUploadService.class, "upload")
-                .safeSubscribe(new UploadSubscriber<FileBean>(this) {
+        RetrofitManager
+                .uploadFile(Constants.UPLOAD_URL, new UploadParam("upload", file))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new UploadObserver<ResultBean<FileBean>>() {
+
                     @Override
-                    protected void _onNext(FileBean result) {
-                        Log.i("retrofit", "onNext=======>url:"+result.getUrl());
-                        tv.setText("上传成功:"+result.getUrl());
+                    public void _onNext(ResultBean<FileBean> fileBeanResultBean) {
+                        Log.i("retrofit", "onNext=======>url:" + fileBeanResultBean.getData().getUrl());
+                        tv.setText("上传成功:" + fileBeanResultBean.getData().getUrl());
                     }
 
                     @Override
-                    protected void _onProgress(Integer percent) {
-                        Log.i("retrofit", "onProgress======>"+percent);
-                        tv.setText("上传中:"+percent);
+                    public void _onProgress(Integer percent) {
+                        Log.i("retrofit", "onProgress======>" + percent);
+                        tv.setText("上传中:" + percent);
                     }
 
                     @Override
-                    protected void _onError(int errorCode, String msg) {
-                        Log.i("retrofit", "onError======>"+msg);
-                        tv.setText("上传失败:"+msg);
+                    public void _onProgress(long uploaded, long sumLength) {
+                        tvActualProgress.setText("上传中:" + uploaded + "/" + sumLength);
+                    }
+
+                    @Override
+                    public void _onError(Throwable e) {
+                        Log.i("retrofit", "onError======>" + e.getMessage());
+                        tv.setText("上传失败:" + e.getMessage());
                     }
                 });
     }
@@ -147,29 +160,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 多图上传
      */
     public void uploads(ArrayList<File> files) {
-        RetrofitUtils
-                .uploadFiles(files, FilesUploadService.class, "uploads")
-                .safeSubscribe(new UploadSubscriber<ArrayList<FileBean>>(this) {
+        ArrayList<UploadParam> uploadParams = new ArrayList<>(files.size());
+        for (File file : files) {
+            uploadParams.add(new UploadParam("upload", file));
+        }
+        RetrofitManager
+                .uploadFile(Constants.UPLOADS_URL,
+                        uploadParams)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new UploadObserver<ResultBean<ArrayList<FileBean>>>() {
+
                     @Override
-                    protected void _onNext(ArrayList<FileBean> result) {
+                    public void _onNext(ResultBean<ArrayList<FileBean>> arrayListResultBean) {
+                        ArrayList<FileBean> fileBeans = arrayListResultBean.getData();
                         StringBuilder stringBuilder = new StringBuilder();
-                        for (FileBean fileBean : result) {
-                            stringBuilder.append("上传成功:"+fileBean.getUrl()+"\n");
+                        for (FileBean fileBean : fileBeans) {
+                            stringBuilder.append("上传成功:" + fileBean.getUrl() + "\n");
                         }
-                        Log.i("retrofit", "onNext=======>"+stringBuilder);
-                        tv.setText("上传成功:"+stringBuilder);
+                        Log.d("retrofit", "onNext=======>" + stringBuilder);
+                        tv.setText("上传成功:" + stringBuilder);
                     }
 
                     @Override
-                    protected void _onProgress(Integer percent) {
-                        Log.i("retrofit", "onProgress=======>"+percent);
-                        tv.setText("上传中:"+percent);
+                    public void _onProgress(Integer percent) {
+                        Log.i("retrofit", "onProgress=======>" + percent);
+                        tv.setText("上传中:" + percent);
                     }
 
                     @Override
-                    protected void _onError(int errorCode, String msg) {
-                        Log.i("retrofit", "onError======>"+msg);
-                        tv.setText("上传失败:"+msg);
+                    public void _onProgress(long uploaded, long sumLength) {
+                        tvActualProgress.setText("上传中:" + uploaded + "/" + sumLength);
+                    }
+
+                    @Override
+                    public void _onError(Throwable e) {
+                        Log.d("retrofit", "onError======>" + e.getMessage());
+                        tv.setText("上传失败:" + e.getMessage());
                     }
                 });
     }
@@ -178,25 +205,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 文件下载
      */
     public void downLoad() {
-        RetrofitUtils
-                .downLoadFile("/uploads/VID_20170616_122618.mp4")
-                .safeSubscribe(new DownLoadSubscriber(this) {
+        RetrofitManager
+                .download("/uploads/test.pdf")
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DownLoadObserver() {
                     @Override
-                    protected void _onNext(String result) {
-                        Log.i("retrofit", "onNext=======>"+result);
-                        tv.setText("下载成功:"+result);
+                    public void _onNext(String result) {
+                        Log.i("retrofit", "onNext=======>" + result);
+                        tv.setText("下载成功:" + result);
                     }
 
                     @Override
-                    protected void _onProgress(Integer percent) {
-                        Log.i("retrofit", "onProgress=======>"+percent);
-                        tv.setText("下载中:"+percent);
+                    public void _onProgress(Integer percent) {
+                        Log.i("retrofit", "onProgress=======>" + percent);
+                        tv.setText("下载中:" + percent);
                     }
 
                     @Override
-                    protected void _onError(int errorCode, String msg) {
-                        Log.i("retrofit", "onProgress=======>"+msg);
-                        tv.setText("下载失败:"+msg);
+                    public void _onProgress(long uploaded, long sumLength) {
+                        tvActualProgress.setText("下载中:" + uploaded + "/" + sumLength);
+                    }
+
+                    @Override
+                    public void _onError(Throwable e) {
+                        Log.i("retrofit", "onProgress=======>" + e.getMessage());
+                        tv.setText("下载失败:" + e.getMessage());
                     }
                 });
     }

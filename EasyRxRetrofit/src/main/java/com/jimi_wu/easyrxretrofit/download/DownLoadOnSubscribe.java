@@ -1,10 +1,12 @@
 package com.jimi_wu.easyrxretrofit.download;
 
+import android.util.Pair;
+
 import java.io.File;
 import java.io.IOException;
 
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.annotations.NonNull;
 import okhttp3.ResponseBody;
 import okio.Buffer;
@@ -17,20 +19,21 @@ import okio.Source;
  * Created by wzm on 2017/6/15.
  */
 
-public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
+public class DownLoadOnSubscribe implements ObservableOnSubscribe<Object> {
 
-    private FlowableEmitter<Object> mFlowableEmitter;
+    private ObservableEmitter<Object> mObservableEmitter;
 
     //    默认保存地址
     private String mPath;
     //    文件名
     private String mFileName;
+    //    临时文件名
+    private String mFileNameTmp;
 
-    //    已上传
-    private long mUploaded = 0l;
+    //    已下载
+    private long mDownLoaded = 0l;
     //    总长度
     private long mSumLength = 0l;
-    private int mPercent = 0;
 
     private Source mSource;
     private Source mProgressSource;
@@ -39,19 +42,27 @@ public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
     public DownLoadOnSubscribe(ResponseBody responseBody, String path, String fileName) throws IOException {
         this.mPath = path;
         this.mFileName = fileName;
+        this.mFileNameTmp = fileName + ".tmp";
+        createFile();
         init(responseBody);
     }
 
     @Override
-    public void subscribe(@NonNull FlowableEmitter<Object> e) {
-        this.mFlowableEmitter = e;
+    public void subscribe(@NonNull ObservableEmitter<Object> e) {
+        this.mObservableEmitter = e;
         try {
             mSink.writeAll(Okio.buffer(mProgressSource));
             mSink.close();
-            mFlowableEmitter.onNext(mPath+mFileName);
-            mFlowableEmitter.onComplete();
+            File file = new File(mPath +File.separator + mFileNameTmp);
+            File destFile = new File(mPath +File.separator + mFileName);
+            if (destFile.exists()) {
+                destFile.delete();
+            }
+            file.renameTo(new File(mPath +File.separator + mFileName));
+            mObservableEmitter.onNext(mPath+File.separator+mFileName);
+            mObservableEmitter.onComplete();
         } catch (Exception exception) {
-            mFlowableEmitter.onError(exception);
+            mObservableEmitter.onError(exception);
         }
     }
 
@@ -63,29 +74,17 @@ public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
 
         mProgressSource = getProgressSource(mSource);
 
-        mSink = Okio.buffer(Okio.sink(new File(mPath + mFileName)));
+        mSink = Okio.buffer(Okio.sink(new File(mPath +File.separator + mFileNameTmp)));
 
     }
 
     public void onRead(long read) {
-        mUploaded += read == -1 ? 0 : read;
-        if(mSumLength <= 0) {
-            onProgress(-1);
-        } else {
-            onProgress((int) (100 * mUploaded / mSumLength));
+        mDownLoaded += read == -1 ? 0 : read;
+        if (mObservableEmitter == null) return;
+        if (mDownLoaded >= mSumLength) {
+            mDownLoaded = mSumLength;
         }
-    }
-
-    private void onProgress(int percent) {
-        if (mFlowableEmitter == null) return;
-        if (percent == mPercent) return;
-        mPercent = percent;
-        if (percent >= 100) {
-            percent = 100;
-            mFlowableEmitter.onNext(percent);
-            return;
-        }
-        mFlowableEmitter.onNext(percent);
+        mObservableEmitter.onNext(Pair.create(mDownLoaded, mSumLength));
     }
 
     private ForwardingSource getProgressSource(Source source) {
@@ -99,5 +98,15 @@ public class DownLoadOnSubscribe implements FlowableOnSubscribe<Object> {
         };
     }
 
+    private void createFile() throws IOException {
+        File path = new File(mPath);
+        if (!path.exists()) {
+            path.mkdirs();
+        }
+        File file = new File(mPath + File.separator + mFileNameTmp);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+    }
 
 }

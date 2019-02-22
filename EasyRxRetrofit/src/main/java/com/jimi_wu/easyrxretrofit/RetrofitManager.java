@@ -1,103 +1,134 @@
 package com.jimi_wu.easyrxretrofit;
 
-import android.content.Context;
+import android.text.TextUtils;
 
-
-import com.jimi_wu.easyrxretrofit.agent.AgentInterceptor;
-import com.jimi_wu.easyrxretrofit.cookie.CookieManager;
+import com.jimi_wu.easyrxretrofit.build.DefaultRetrofitBuilder;
+import com.jimi_wu.easyrxretrofit.build.RetrofitBuilder;
+import com.jimi_wu.easyrxretrofit.download.DownLoadService;
+import com.jimi_wu.easyrxretrofit.download.DownLoadTransformer;
+import com.jimi_wu.easyrxretrofit.transformer.BaseModel;
+import com.jimi_wu.easyrxretrofit.transformer.BaseModelTransformer;
+import com.jimi_wu.easyrxretrofit.upload.UploadOnSubscribe;
+import com.jimi_wu.easyrxretrofit.upload.UploadParam;
+import com.jimi_wu.easyrxretrofit.upload.UploadRequestBody;
+import com.jimi_wu.easyrxretrofit.upload.UploadService;
+import com.jimi_wu.easyrxretrofit.utils.FileUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import okhttp3.CookieJar;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import retrofit2.CallAdapter;
-import retrofit2.Converter;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
+import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by wzm on 2017/6/14.
  */
-
 public class RetrofitManager {
 
-    private String mAgent;
-    private String mBaseUrl;
-    private ArrayList<Converter.Factory> mConverterFactorys = new ArrayList<>();
-    private ArrayList<CallAdapter.Factory> mCallAdapterFactory = new ArrayList<>();
-    private ArrayList<Interceptor> mInterceptor = new ArrayList<>();
-    private CookieJar mCookieJar;
+    /**
+     * 初始化
+     */
+    private static Retrofit mRetrofit;
 
-    private OkHttpClient mOkHttpClient;
-    private Retrofit mRetrofit;
-
-    private RetrofitManager() {
+    public static void init(RetrofitBuilder builder) {
+        mRetrofit = builder.initRetrofit();
     }
 
-    private static RetrofitManager mRetrofitManager;
-
-    public synchronized static RetrofitManager getInstance() {
-        if(mRetrofitManager == null)
-            mRetrofitManager = new RetrofitManager();
-        return mRetrofitManager;
-    }
-
-    public RetrofitManager setBaseUrl(String baseUrl) {
-        this.mBaseUrl = baseUrl;
-        return this;
-    }
-
-    public RetrofitManager setAgent(String agent) {
-        this.mAgent = agent;
-        return this;
-    }
-
-    public RetrofitManager addConverterFactory(Converter.Factory factory) {
-        this.mConverterFactorys.add(factory);
-        return this;
-    }
-
-    public RetrofitManager addCallAdapterFactory(CallAdapter.Factory factory) {
-        this.mCallAdapterFactory.add(factory);
-        return this;
-    }
-
-    public void init(Context context) {
-
-        if (mBaseUrl == null) throw new IllegalArgumentException("Base URL required.");
-
-        if(mCookieJar == null) mCookieJar = new CookieManager(context);
-        if(mAgent != null) mInterceptor.add(new AgentInterceptor(mAgent));
-        mConverterFactorys.add(GsonConverterFactory.create());
-        mCallAdapterFactory.add(RxJava2CallAdapterFactory.create());
-
-        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
-        okHttpClientBuilder.cookieJar(mCookieJar);
-        for(Interceptor interceptor : mInterceptor) {
-            okHttpClientBuilder.addInterceptor(interceptor);
+    public static Retrofit getRetrofit() {
+        if (mRetrofit == null) {
+            mRetrofit = new DefaultRetrofitBuilder().initRetrofit();
         }
-        this.mOkHttpClient = okHttpClientBuilder.build();
-
-        Retrofit.Builder retrofitBuilder = new Retrofit.Builder();
-        retrofitBuilder.client(mOkHttpClient);
-        retrofitBuilder.baseUrl(mBaseUrl);
-        for (Converter.Factory factory : mConverterFactorys) {
-            retrofitBuilder.addConverterFactory(factory);
-        }
-        for (CallAdapter.Factory factory : mCallAdapterFactory) {
-            retrofitBuilder.addCallAdapterFactory(factory);
-        }
-
-        this.mRetrofit = retrofitBuilder.build();
-
-        RetrofitUtils.setRetrofitManager(this);
-    }
-
-
-    public Retrofit getRetrofit() {
         return mRetrofit;
+    }
+
+    /**
+     * 创建请求
+     */
+    public static <T> T createService(final Class<T> service) {
+        return getRetrofit().create(service);
+    }
+
+    /**
+     * 转换
+     */
+    public static <T> ObservableTransformer<BaseModel<T>, T> handleResult() {
+        return new BaseModelTransformer<>();
+    }
+
+
+    /**
+     * 下载
+     */
+    public static Observable<Object> download(String url) {
+        return RetrofitManager.download(url, null, null);
+    }
+
+    public static Observable<Object> download(String url, String savePath, String fileName) {
+        return RetrofitManager.createService(DownLoadService.class)
+                .startDownLoad(url)
+                .compose(RetrofitManager.handleDownload(url, savePath, fileName));
+    }
+
+    /**
+     * 下载监听转换
+     */
+    public static ObservableTransformer<ResponseBody, Object> handleDownload(String url, String savePath, String fileName) {
+        if (TextUtils.isEmpty(savePath)) {
+            savePath = FileUtils.getDefaultDownLoadPath();
+        }
+        if (TextUtils.isEmpty(fileName)) {
+            fileName = FileUtils.getDefaultDownLoadFileName(url);
+        }
+        return new DownLoadTransformer(savePath, fileName);
+    }
+
+
+    /**
+     * 上传
+     */
+    public static Observable<Object> uploadFile(String url, List<UploadParam> params) {
+//      进度Observable
+        UploadOnSubscribe uploadOnSubscribe = new UploadOnSubscribe();
+        Observable progressObservable = Observable.create(uploadOnSubscribe);
+
+//        组装请求
+        List<MultipartBody.Part> parts = new ArrayList<>(params.size());
+        for (UploadParam param : params) {
+            switch (param.getType()) {
+//                文本
+                case UploadParam.TYPE_STRING:
+                    parts.add(MultipartBody.Part.createFormData(param.getName(), param.getValue()));
+                    break;
+//                文件
+                case UploadParam.TYPE_FILE:
+                    if (param.getFile() == null || !param.getFile().exists()) {
+                        break;
+                    }
+                    UploadRequestBody uploadRequestBody = new UploadRequestBody(param.getFile());
+//                    设置总长度
+                    uploadOnSubscribe.addSumLength(param.getFile().length());
+                    uploadRequestBody.setUploadOnSubscribe(uploadOnSubscribe);
+                    parts.add(MultipartBody.Part.createFormData(param.getName(), param.getFileName(), uploadRequestBody));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+//        发起请求
+        Observable uploadObservable = RetrofitManager
+                .createService(UploadService.class)
+                .upload(url, parts);
+
+        return Observable.merge(progressObservable, uploadObservable);
+    }
+
+    public static Observable<Object> uploadFile(String url, UploadParam... params) {
+        return RetrofitManager.uploadFile(url, Arrays.asList(params));
     }
 
 }
